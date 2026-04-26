@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: chatbot-service
-        image: ananthakkumar/new_ticket-chatbot-service:v3
+        image: ananthakkumar/new_ticket-chatbot-service:v1.0.0
         ports:
         - containerPort: 4004
         envFrom:
