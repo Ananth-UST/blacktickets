@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: booking-service
-        image: ananthakkumar/new_ticket-booking-service:v2
+        image: ananthakkumar/new_ticket-booking-service:v3
         ports:
         - containerPort: 4003
         envFrom:
