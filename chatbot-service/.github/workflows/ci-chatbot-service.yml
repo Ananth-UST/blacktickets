@@ -1,0 +1,29 @@
+name: CI — Chatbot Service
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    uses: Black-Tickets/shared-workflow/.github/workflows/ci-template.yml@main
+    with:
+      service-name: new_ticket-chatbot-service
+      service-path: .
+      runtime: node
+      node-version: "18"
+      environment: ${{ github.ref == 'refs/heads/main' && 'main' || 'develop' }}
+      sonar-enabled: true
+      notifications-enabled: true
+      sonar-project-key: new-ticket-chatbot-service
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_URL: ${{ secrets.SONAR_URL }}
