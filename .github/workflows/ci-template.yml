@@ -100,7 +100,7 @@ jobs:
 
       - name: Install Node dependencies
         if: inputs.runtime == 'node'
-        run: npm ci
+        run: npm install
 
       - name: Check unused dependencies(node)
         if: inputs.runtime == 'node'
