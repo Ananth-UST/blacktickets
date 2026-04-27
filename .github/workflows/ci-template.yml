@@ -73,12 +73,12 @@ jobs:
       - name: Sonar Scan
         id: sonar-scan
         if: inputs.sonar-enabled == true && inputs.sonar-project-key != ''
-        working-directory: ${{ inputs.service-path }}
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
         with:
+          projectBaseDir: ${{ inputs.service-path }}
           args: >
             -Dsonar.projectKey=${{ inputs.sonar-project-key }}
             -Dsonar.projectName=${{ inputs.service-name }}
