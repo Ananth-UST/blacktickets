@@ -79,17 +79,20 @@ jobs:
           args: >
             -Dsonar.projectKey=${{ inputs.sonar-project-key }}
             -Dsonar.projectName=${{ inputs.service-name }}
+            -Dsonar.host.url=${{ secrets.SONAR_URL }}
+            -Dsonar.working.directory=${{ github.workspace }}
             -Dsonar.sources=.
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
 
       # If Quality gate is fails, the job fails !!!
       - name: Sonar Quality Gate
         if: inputs.sonar-enabled == true && steps.sonar-scan.outcome == 'success'
         uses: SonarSource/sonarqube-quality-gate-action@v1
+        with:
+          scanMetadataReportFile: ${{ github.workspace }}/.scannerwork/report-task.txt
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
