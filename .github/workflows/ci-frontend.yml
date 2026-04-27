@@ -31,6 +31,6 @@ jobs:
       node-version: "18"
       environment: ${{ github.ref == 'refs/heads/main' && 'main' || 'develop' }}
       sonar-enabled: true
-      notifications-enabled: false
+      notifications-enabled: true
       sonar-project-key: new-ticket-frontend
     secrets: inherit

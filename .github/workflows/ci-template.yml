@@ -41,9 +41,9 @@ on:
       SNYK_TOKEN:
         required: true
       SONAR_TOKEN:
-        required: false
+        required: true
       SONAR_URL:
-        required: false
+        required: true
       DOCKER_USERNAME:
         required: true
       DOCKER_PASSWORD:
@@ -85,7 +85,7 @@ jobs:
             -Dsonar.sources=.
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
-            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.wait=${{ inputs.environment == 'main' && 'true' || 'false' }}
 
       - name: Setup Node.js
         if: inputs.runtime == 'node'
@@ -124,7 +124,7 @@ jobs:
       - name: Snyk - Scan dependencies (Node)
         if: inputs.runtime == 'node'
         id: snyk-node
-        continue-on-error: true
+        continue-on-error: ${{ inputs.environment != 'main' }}
         run: snyk test --severity-threshold=high --json-file-output=snyk-report.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -136,7 +136,7 @@ jobs:
       - name: Snyk - Scan dependencies (Python)
         if: inputs.runtime == 'python'
         id: snyk-python
-        continue-on-error: true
+        continue-on-error: ${{ inputs.environment != 'main' }}
         run: snyk test --file=requirements.txt --package-manager=pip --severity-threshold=high --json-file-output=snyk-report.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -182,7 +182,7 @@ jobs:
             echo "BREVO_API_KEY not set, skipping notification"
             exit 0
           fi
-          REPORT_BASE64=$(base64 -w 0 snyk-report.html)
+          REPORT_BASE64=$(base64 -w 0 ${{ inputs.service-path }}/snyk-report.html)
 
           curl --request POST \
             --url https://api.brevo.com/v3/smtp/email \
@@ -289,14 +289,13 @@ jobs:
       - name: Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
         if: steps.build.outputs.built == 'true'
-        continue-on-error: true
         with:
           image-ref: '${{ secrets.DOCKER_USERNAME }}/${{ inputs.service-name }}:${{ steps.tag.outputs.tag }}'
           format: 'table'
           output: '${{ github.workspace }}/trivy-report-${{ inputs.service-name }}.txt'
           scan-type: 'image'
           severity: 'CRITICAL'
-          exit-code: '1'
+          exit-code: ${{ inputs.environment == 'main' && '1' || '0' }}
           ignore-unfixed: false
           vuln-type: 'os,library'
 
