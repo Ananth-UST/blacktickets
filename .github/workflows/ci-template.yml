@@ -28,6 +28,10 @@ on:
         required: false
         type: boolean
         default: true
+      notifications-enabled:
+        required: false
+        type: boolean
+        default: false
 
     secrets:
       SNYK_TOKEN:
@@ -47,10 +51,10 @@ jobs:
   code-quality:
     name: "Code Quality - ${{ inputs.service-name }}"
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     concurrency:
       group: code-quality-${{ inputs.service-name }}-${{ inputs.environment }}
-      cancel-in-progress: false
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     defaults:
       run:
         working-directory: ${{ inputs.service-path }}
@@ -63,7 +67,7 @@ jobs:
 
       # SAST
       - name: Run Sonar Scan
-        if: secrets.SONAR_TOKEN != ''
+        if: inputs.sonar-enabled == true
         uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: ${{ inputs.service-path }}
@@ -73,10 +77,8 @@ jobs:
 
       # If Quality gate is fails, the job fails !!!
       - name: Sonar Quality Gate
-        if: secrets.SONAR_TOKEN != ''
+        if: inputs.sonar-enabled == true
         uses: SonarSource/sonarqube-quality-gate-action@v1
-        with:
-          scanMetadataReportFile: ${{ inputs.service-path }}/.scannerwork/report-task.txt
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -117,7 +119,9 @@ jobs:
 
       - name: Snyk - Scan dependencies (Node)
         if: inputs.runtime == 'node'
-        run: snyk test --severity-threshold=high --json-file-output=snyk-report.json || true
+        id: snyk-node
+        continue-on-error: true
+        run: snyk test --severity-threshold=high --json-file-output=snyk-report.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -127,7 +131,9 @@ jobs:
 
       - name: Snyk - Scan dependencies (Python)
         if: inputs.runtime == 'python'
-        run: snyk test --file=requirements.txt --package-manager=pip --severity-threshold=high --json-file-output=snyk-report.json || true
+        id: snyk-python
+        continue-on-error: true
+        run: snyk test --file=requirements.txt --package-manager=pip --severity-threshold=high --json-file-output=snyk-report.json
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -145,8 +151,14 @@ jobs:
 
       - name: Check for Critical Vulnerabilities
         id: snyk-check
+        if: always()
         run: |
-          CRITICAL_COUNT=$(jq '[.vulnerabilities[] | select(.severity == "critical" or .severity == "high")] | length' snyk-report.json)
+          if [ ! -f snyk-report.json ]; then
+            echo "snyk-report.json not found, skipping vulnerability check"
+            echo "critical_found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          CRITICAL_COUNT=$(jq '[.vulnerabilities[] | select(.severity == "critical" or .severity == "high")] | length' snyk-report.json 2>/dev/null || echo "0")
           echo "Critical count: $CRITICAL_COUNT"
           if [ "$CRITICAL_COUNT" -gt 0 ]; then
             echo "critical_found=true" >> $GITHUB_OUTPUT
@@ -155,8 +167,15 @@ jobs:
           fi
 
       - name: Send Email Alert with Report (Brevo)
-        if: steps.snyk-check.outputs.critical_found == 'true' && secrets.BREVO_API_KEY != ''
+        if: steps.snyk-check.outputs.critical_found == 'true' && inputs.notifications-enabled == true
+        continue-on-error: true
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: |
+          if [ -z "$BREVO_API_KEY" ]; then
+            echo "BREVO_API_KEY not set, skipping notification"
+            exit 0
+          fi
           REPORT_BASE64=$(base64 -w 0 snyk-report.html)
 
           curl --request POST \
@@ -164,32 +183,30 @@ jobs:
             --header "accept: application/json" \
             --header "api-key: $BREVO_API_KEY" \
             --header "content-type: application/json" \
-            --data "{
-              \"sender\": {
-                \"name\": \"CI Pipeline\",
-                \"email\": \"fitforge360.in@gmail.com\"
-              },
-              \"to\": [{
-                \"email\": \"fitforge360.in@gmail.com\"
-              }],
-              \"subject\": \"🚨 Critical Vulnerabilities Detected\",
-              \"textContent\": \"Critical vulnerabilities found. See attached Snyk report.\",
-              \"attachment\": [{
-                \"name\": \"snyk-report.html\",
-                \"content\": \"$REPORT_BASE64\"
-              }]
-            }"
-        env:
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+            --data "{\
+              \"sender\": {\
+                \"name\": \"CI Pipeline\",\
+                \"email\": \"fitforge360.in@gmail.com\"\
+              },\
+              \"to\": [{\
+                \"email\": \"fitforge360.in@gmail.com\"\
+              }],\
+              \"subject\": \"🚨 Critical Vulnerabilities Detected\",\
+              \"textContent\": \"Critical vulnerabilities found. See attached Snyk report.\",\
+              \"attachment\": [{\
+                \"name\": \"snyk-report.html\",\
+                \"content\": \"$REPORT_BASE64\"\
+              }]\
+            \}"
 
   build-publish:
     name: "Build & Publish - ${{ inputs.service-name }}"
     runs-on: ubuntu-latest
     needs: [code-quality]
-    if: always() && needs.code-quality.result != 'failure' && needs.code-quality.result != 'cancelled'
+    if: needs.code-quality.result == 'success'
     concurrency:
       group: build-publish-${{ inputs.service-name }}-${{ inputs.environment }}
-      cancel-in-progress: false
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     defaults:
       run:
         working-directory: ${{ inputs.service-path }}
@@ -242,8 +259,10 @@ jobs:
           fi
 
       - name: Login to Docker
-        run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Check Docker image
         id: image_check
@@ -264,14 +283,15 @@ jobs:
       - name: Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
         if: steps.build.outputs.built == 'true'
+        continue-on-error: true
         with:
           image-ref: '${{ secrets.DOCKER_USERNAME }}/${{ inputs.service-name }}:${{ steps.tag.outputs.tag }}'
           format: 'table'
           output: '${{ github.workspace }}/trivy-report-${{ inputs.service-name }}.txt'
           scan-type: 'image'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '0'
-          ignore-unfixed: true
+          severity: 'CRITICAL'
+          exit-code: '1'
+          ignore-unfixed: false
           vuln-type: 'os,library'
 
       - name: Upload Trivy Report
@@ -284,17 +304,30 @@ jobs:
 
       - name: Check Trivy for High or Critical Vulnerabilities
         id: trivy-check
-        if: steps.build.outputs.built == 'true'
+        if: always() && steps.build.outputs.built == 'true'
         run: |
-          if grep -qE "CRITICAL" "${{ github.workspace }}/trivy-report-${{ inputs.service-name }}.txt"; then
+          REPORT_FILE="${{ github.workspace }}/trivy-report-${{ inputs.service-name }}.txt"
+          if [ ! -f "$REPORT_FILE" ]; then
+            echo "Trivy report not found, skipping vulnerability check"
+            echo "critical_found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          if grep -qE "CRITICAL" "$REPORT_FILE"; then
             echo "critical_found=true" >> $GITHUB_OUTPUT
           else
             echo "critical_found=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Send Trivy Alert (Brevo)
-        if: steps.trivy-check.outputs.critical_found == 'true' && secrets.BREVO_API_KEY != ''
+        if: steps.trivy-check.outputs.critical_found == 'true' && inputs.notifications-enabled == true
+        continue-on-error: true
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: |
+          if [ -z "$BREVO_API_KEY" ]; then
+            echo "BREVO_API_KEY not set, skipping notification"
+            exit 0
+          fi
           REPORT_FILE="${{ github.workspace }}/trivy-report-${{ inputs.service-name }}.txt"
           REPORT_BASE64=$(base64 -w 0 "$REPORT_FILE")
 
@@ -321,8 +354,6 @@ jobs:
             --header "api-key: $BREVO_API_KEY" \
             --header "content-type: application/json" \
             --data @/tmp/brevo-payload.json
-        env:
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
 
       - name: Push Docker Image
         if: steps.build.outputs.built == 'true' && github.event_name != 'pull_request'

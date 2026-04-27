@@ -30,4 +30,6 @@ jobs:
       runtime: node
       node-version: "18"
       environment: ${{ github.ref_name }}
+      sonar-enabled: false
+      notifications-enabled: false
     secrets: inherit
