@@ -192,10 +192,10 @@ jobs:
             --data "{\
               \"sender\": {\
                 \"name\": \"CI Pipeline\",\
-                \"email\": \"fitforge360.in@gmail.com\"\
+                \"email\": \"ananthvijay2003@gmail.com\"\
               },\
               \"to\": [{\
-                \"email\": \"fitforge360.in@gmail.com\"\
+                \"email\": \"ananthvijay2003@gmail.com\"\
               }],\
               \"subject\": \"🚨 Critical Vulnerabilities Detected\",\
               \"textContent\": \"Critical vulnerabilities found. See attached Snyk report.\",\
@@ -341,9 +341,9 @@ jobs:
           {
             "sender": {
               "name": "CI Pipeline",
-              "email": "fitforge360.in@gmail.com"
+              "email": "ananthvijay2003@gmail.com"
             },
-            "to": [{ "email": "fitforge360.in@gmail.com" }],
+            "to": [{ "email": "ananthvijay2003@gmail.com" }],
             "subject": "🚨 Trivy Vulnerabilities Detected - ${{ inputs.service-name }}",
             "textContent": "HIGH or CRITICAL vulnerabilities found in ${{ inputs.service-name }}. See attached report.",
             "attachment": [{
