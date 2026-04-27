@@ -30,6 +30,7 @@ jobs:
       runtime: node
       node-version: "18"
       environment: ${{ github.ref_name }}
-      sonar-enabled: false
+      sonar-enabled: true
       notifications-enabled: false
+      sonar-project-key: new-ticket-event-service
     secrets: inherit
