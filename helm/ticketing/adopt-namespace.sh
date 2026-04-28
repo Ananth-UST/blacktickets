@@ -14,7 +14,7 @@ kubectl annotate namespace $NAMESPACE \
   --overwrite
 
 # Adopt all resources
-for resource in pvc configmap secret deployment service; do
+for resource in pvc configmap secret deployment service gateway httproute; do
   kubectl get $resource -n $NAMESPACE --no-headers \
     -o custom-columns=":metadata.name" 2>/dev/null | \
   while read name; do
@@ -24,8 +24,10 @@ for resource in pvc configmap secret deployment service; do
     kubectl annotate $resource $name -n $NAMESPACE \
       meta.helm.sh/release-name=$RELEASE \
       meta.helm.sh/release-namespace=$NAMESPACE \
+      helm.sh/resource-policy=keep \
       --overwrite 2>/dev/null
   done
 done
 
-echo "Done!"
+echo "Done! Now run:"
+echo "helm upgrade --install $RELEASE /home/ubuntu/blacktickets/helm/ticketing -n $NAMESPACE -f values.yaml -f values-$NAMESPACE.yaml"

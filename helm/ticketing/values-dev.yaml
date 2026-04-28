@@ -32,34 +32,18 @@ chatbot:
   replicaCount: 1
   image:
     tag: v1.0.0
-
-# PostgreSQL
-postgres:
-  replicaCount: 1
-  persistence:
-    enabled: true
-    size: 5Gi
-    storageClass: nfs-storage
-
-# Override postgres persistence for dev
-postgres:
-  persistence:
-    enabled: true
-    size: 10Gi
-    storageClass: manual
-
-# PV bindings for dev
-postgres:
-  persistence:
-    enabled: true
-    storageClass: manual
-    size: 10Gi
-    volumeName: postgres-pv-dev
-
-chatbot:
   nfs:
     enabled: true
     pvcName: nfs-pvc
     mountPath: /app/data
     size: 10Gi
     volumeName: nfs-pv-dev
+
+# PostgreSQL
+postgres:
+  replicaCount: 1
+  persistence:
+    enabled: true
+    storageClass: manual
+    size: 10Gi
+    volumeName: postgres-pv-dev
