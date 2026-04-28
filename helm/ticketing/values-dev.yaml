@@ -37,4 +37,6 @@ chatbot:
 postgres:
   replicaCount: 1
   persistence:
+    enabled: true
     size: 5Gi
+    storageClass: nfs-storage
