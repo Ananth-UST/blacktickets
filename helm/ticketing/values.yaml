@@ -100,6 +100,8 @@ chatbot:
     enabled: true
     pvcName: nfs-pvc
     mountPath: /app/data
+    size: 10Gi
+    volumeName: nfs-pv-dev
 
 # PostgreSQL
 postgres:
@@ -120,8 +122,10 @@ postgres:
       cpu: "500m"
   persistence:
     enabled: true
-    storageClass: manual
+    pvcName: nfs-pvc
+    moutPath: /app/data
     size: 10Gi
+    volumeName: nfs-pv-dev
 
 # ConfigMap
 configmap:
@@ -132,7 +136,12 @@ configmap:
 secrets:
   enabled: true
   name: ticketing-secrets
-
+  postgresPassword: "CHANGE_ME_SECURE_PASSWORD"
+  jwtSecret: "CHANGE_ME_SECURE_JWT_SECRET_MIN_64_CHARS"
+  adminEmail: "admin@bookish.com"
+  adminPassword: "SecureAdminPass123!@#"
+  userEmail: "user@example.com"
+  userPassword: "CHANGE_ME_USER_PASSWORD"
 # Gateway API
 gateway:
   enabled: true

@@ -7,7 +7,7 @@ global:
 frontend:
   replicaCount: 3
   image:
-    tag: v1.0.0
+    tag: v1.0.0-prod
 
 # Identity service
 identity:
@@ -38,3 +38,19 @@ postgres:
   replicaCount: 1
   persistence:
     size: 20Gi
+
+# PV bindings for prod
+postgres:
+  persistence:
+    enabled: true
+    storageClass: manual
+    size: 20Gi
+    volumeName: postgres-pv-prod
+
+chatbot:
+  nfs:
+    enabled: true
+    pvcName: nfs-pvc
+    mountPath: /app/data
+    size: 20Gi
+    volumeName: nfs-pv-prod
