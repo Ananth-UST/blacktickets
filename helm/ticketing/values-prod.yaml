@@ -1,0 +1,40 @@
+# Production environment values
+global:
+  namespace: ticketing-prod
+  imagePullPolicy: IfNotPresent
+
+# Frontend service
+frontend:
+  replicaCount: 3
+  image:
+    tag: v1.0.0
+
+# Identity service
+identity:
+  replicaCount: 3
+  image:
+    tag: v1.0.0
+
+# Event service
+event:
+  replicaCount: 3
+  image:
+    tag: v1.0.0
+
+# Booking service
+booking:
+  replicaCount: 3
+  image:
+    tag: v1.0.0
+
+# Chatbot service
+chatbot:
+  replicaCount: 2
+  image:
+    tag: v1.0.0
+
+# PostgreSQL
+postgres:
+  replicaCount: 1
+  persistence:
+    size: 20Gi

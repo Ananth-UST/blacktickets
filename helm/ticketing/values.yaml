@@ -1,0 +1,145 @@
+# Default values for ticketing chart
+# This is a YAML-formatted file.
+
+# Global settings
+global:
+  namespace: ticketing
+  imagePullPolicy: IfNotPresent
+
+# Frontend service
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ananthakkumar/new_ticket-frontend
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 5173
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Identity service
+identity:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ananthakkumar/new_ticket-identity-service
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 4001
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Event service
+event:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ananthakkumar/new_ticket-event-service
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 4002
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Booking service
+booking:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ananthakkumar/new_ticket-booking-service
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 4003
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+# Chatbot service
+chatbot:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ananthakkumar/new_ticket-chatbot-service
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 4004
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  # NFS storage for chatbot
+  nfs:
+    enabled: true
+    pvcName: nfs-pvc
+    mountPath: /app/data
+
+# PostgreSQL
+postgres:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
+  service:
+    port: 5432
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  persistence:
+    enabled: true
+    storageClass: manual
+    size: 10Gi
+
+# ConfigMap
+configmap:
+  enabled: true
+  name: ticketing-config
+
+# Secrets
+secrets:
+  enabled: true
+  name: ticketing-secrets
+
+# Gateway API
+gateway:
+  enabled: true
+  gatewayClassName: kgateway
+  port: 80
+
+# HTTPRoute
+httproute:
+  enabled: true
+  parentGateway: ticketing-gateway
