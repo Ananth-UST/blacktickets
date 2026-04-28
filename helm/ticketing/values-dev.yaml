@@ -1,37 +1,37 @@
 # Development environment values
 global:
   namespace: ticketing-dev
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
 
 # Frontend service
 frontend:
   replicaCount: 1
   image:
-    tag: v1.0.0-dev
+    tag: v1.0.0
 
 # Identity service
 identity:
   replicaCount: 1
   image:
-    tag: v1.0.0-dev
+    tag: v1.0.0
 
 # Event service
 event:
   replicaCount: 1
   image:
-    tag: v1.0.0-dev
+    tag: v1.0.0
 
 # Booking service
 booking:
   replicaCount: 1
   image:
-    tag: v1.0.0-dev
+    tag: v1.0.0
 
 # Chatbot service
 chatbot:
   replicaCount: 1
   image:
-    tag: v1.0.0-dev
+    tag: v1.0.0
 
 # PostgreSQL
 postgres:
