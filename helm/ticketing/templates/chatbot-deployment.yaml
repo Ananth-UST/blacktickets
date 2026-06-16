@@ -1,0 +1,68 @@
+{{- if .Values.chatbot.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: chatbot-service
+spec:
+  replicas: {{ .Values.chatbot.replicaCount }}
+  selector:
+    matchLabels:
+      app: chatbot-service
+  template:
+    metadata:
+      labels:
+        app: chatbot-service
+    spec:
+      {{- if .Values.chatbot.nfs.enabled }}
+      volumes:
+      - name: nfs-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.chatbot.nfs.pvcName }}
+      {{- end }}
+      containers:
+      - name: chatbot-service
+        image: "{{ .Values.chatbot.image.repository }}:{{ .Values.chatbot.image.tag }}"
+        imagePullPolicy: {{ .Values.chatbot.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.chatbot.service.port }}
+        {{- if .Values.chatbot.nfs.enabled }}
+        volumeMounts:
+        - name: nfs-storage
+          mountPath: {{ .Values.chatbot.nfs.mountPath }}
+        {{- end }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.configmap.name }}
+        - secretRef:
+            name: {{ .Values.secrets.name }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.chatbot.service.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.chatbot.service.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.chatbot.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: chatbot-service
+  ports:
+  - port: {{ .Values.chatbot.service.port }}
+    targetPort: {{ .Values.chatbot.service.port }}
+  type: ClusterIP
+{{- end }}

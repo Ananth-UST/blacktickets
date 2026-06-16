@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "3"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"chatbot-service","namespace":"ticketing"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"chatbot-service"}},"template":{"metadata":{"labels":{"app":"chatbot-service"}},"spec":{"containers":[{"envFrom":[{"configMapRef":{"name":"ticketing-config"}},{"secretRef":{"name":"ticketing-secrets"}}],"image":"ananthakkumar/new_ticket-chatbot-service:v3","livenessProbe":{"httpGet":{"path":"/health","port":4004},"initialDelaySeconds":30,"periodSeconds":10},"name":"chatbot-service","ports":[{"containerPort":4004}],"readinessProbe":{"httpGet":{"path":"/health","port":4004},"initialDelaySeconds":5,"periodSeconds":5},"resources":{"limits":{"cpu":"200m","memory":"256Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}}]}}}}
+  creationTimestamp: "2026-04-26T06:42:55Z"
+  generation: 3
+  name: chatbot-service
+  namespace: ticketing
+  resourceVersion: "491113"
+  uid: 882b7f0f-61f9-4685-98a7-de0be2f4a458
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: chatbot-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2026-04-27T20:17:31Z"
+      labels:
+        app: chatbot-service
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: ticketing-config
+        - secretRef:
+            name: ticketing-secrets
+        image: ananthakkumar/new_ticket-chatbot-service:v3
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 4004
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: chatbot-service
+        ports:
+        - containerPort: 4004
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 4004
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-04-27T19:49:22Z"
+    lastUpdateTime: "2026-04-27T19:49:22Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-04-26T06:42:55Z"
+    lastUpdateTime: "2026-04-27T20:17:39Z"
+    message: ReplicaSet "chatbot-service-78577cd44d" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 3
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

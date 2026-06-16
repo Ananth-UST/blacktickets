@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ananthakkumar/new_ticket-frontend:v4
+        image: ananthakkumar/new_ticket-frontend:v1.0.0
         ports:
         - containerPort: 5173
         envFrom:

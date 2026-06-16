@@ -1,0 +1,36 @@
+name: CI — Frontend
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+      - ".github/workflows/ci-template.yml"
+  pull_request:
+    branches:
+      - develop
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+      - ".github/workflows/ci-template.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci-template.yml
+    with:
+      service-name: new_ticket-frontend
+      service-path: ./frontend
+      runtime: node
+      node-version: "18"
+      environment: ${{ github.ref == 'refs/heads/main' && 'main' || 'develop' }}
+      sonar-enabled: true
+      notifications-enabled: true
+      sonar-project-key: new-ticket-frontend
+    secrets: inherit

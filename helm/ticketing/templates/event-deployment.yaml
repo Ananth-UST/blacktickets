@@ -1,0 +1,57 @@
+{{- if .Values.event.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: event-service
+spec:
+  replicas: {{ .Values.event.replicaCount }}
+  selector:
+    matchLabels:
+      app: event-service
+  template:
+    metadata:
+      labels:
+        app: event-service
+    spec:
+      containers:
+      - name: event-service
+        image: "{{ .Values.event.image.repository }}:{{ .Values.event.image.tag }}"
+        imagePullPolicy: {{ .Values.event.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.event.service.port }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.configmap.name }}
+        - secretRef:
+            name: {{ .Values.secrets.name }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.event.service.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.event.service.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.event.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: event-service
+  ports:
+  - port: {{ .Values.event.service.port }}
+    targetPort: {{ .Values.event.service.port }}
+  type: ClusterIP
+{{- end }}

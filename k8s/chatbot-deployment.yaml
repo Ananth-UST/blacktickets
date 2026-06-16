@@ -13,11 +13,18 @@ spec:
       labels:
         app: chatbot-service
     spec:
+      volumes:
+      - name: nfs-storage
+        persistentVolumeClaim:
+          claimName: nfs-pvc
       containers:
       - name: chatbot-service
-        image: ananthakkumar/new_ticket-chatbot-service:v2
+        image: ananthakkumar/new_ticket-chatbot-service:v1.0.0
         ports:
         - containerPort: 4004
+        volumeMounts:
+        - name: nfs-storage
+          mountPath: /app/data
         envFrom:
         - configMapRef:
             name: ticketing-config

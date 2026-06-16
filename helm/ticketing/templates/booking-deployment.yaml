@@ -1,0 +1,57 @@
+{{- if .Values.booking.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: booking-service
+spec:
+  replicas: {{ .Values.booking.replicaCount }}
+  selector:
+    matchLabels:
+      app: booking-service
+  template:
+    metadata:
+      labels:
+        app: booking-service
+    spec:
+      containers:
+      - name: booking-service
+        image: "{{ .Values.booking.image.repository }}:{{ .Values.booking.image.tag }}"
+        imagePullPolicy: {{ .Values.booking.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.booking.service.port }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.configmap.name }}
+        - secretRef:
+            name: {{ .Values.secrets.name }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.booking.service.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.booking.service.port }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.booking.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: booking-service
+  ports:
+  - port: {{ .Values.booking.service.port }}
+    targetPort: {{ .Values.booking.service.port }}
+  type: ClusterIP
+{{- end }}
